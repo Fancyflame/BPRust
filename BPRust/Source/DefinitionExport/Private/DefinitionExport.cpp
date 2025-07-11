@@ -7,6 +7,7 @@
 #include "DefinitionExportCommands.h"
 #include "Misc/MessageDialog.h"
 #include "ToolMenus.h"
+#include "Interfaces/IPluginManager.h"
 
 static const FName DefinitionExportTabName("DefinitionExport");
 
@@ -48,15 +49,24 @@ void FDefinitionExportModule::ShutdownModule()
 void FDefinitionExportModule::PluginButtonClicked()
 {
 	// Put your "OnButtonClicked" stuff here
+
+	// 获取项目根目录（包含末尾斜杠）
+	FString PluginRoot = IPluginManager::Get().FindPlugin("BPRust")->GetBaseDir();
+	// 定义文件输出
+	FString FilePath = PluginRoot / TEXT("blueprint_definitions.json");
+	
 	DefExportImplement Exporter;
 	Exporter.FetchDefinitions();
-	const TCHAR* WriteResult = Exporter.WriteToFile() ? TEXT("succeed") : TEXT("failed");
+	bool WriteSuccessful = Exporter.WriteToFile(FilePath);
 	
+	const TCHAR* DialogContent = WriteSuccessful ? TEXT("succeed") : TEXT("failed");
+	EAppMsgCategory DialogIcon = WriteSuccessful ? EAppMsgCategory::Success : EAppMsgCategory::Error;
+
 	FText DialogText = FText::Format(
 							LOCTEXT("PluginButtonDialogText", "Definition export {0}"),
-							FText::FromString(WriteResult)
+							FText::FromString(DialogContent)
 					   );
-	FMessageDialog::Open(EAppMsgType::Ok, DialogText);
+	FMessageDialog::Open(DialogIcon, EAppMsgType::Ok, DialogText);
 }
 
 void FDefinitionExportModule::RegisterMenus()

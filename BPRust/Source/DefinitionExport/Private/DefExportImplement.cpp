@@ -287,14 +287,8 @@ void DefExportImplement::FetchDefinitions()
 	//                    { return ClassA.GetName() < ClassB.GetName(); });
 }
 
-bool DefExportImplement::WriteToFile()
+bool DefExportImplement::WriteToFile(FString const &FilePath)
 {
-	// 获取项目根目录（包含末尾斜杠）
-	FString ProjectRoot = FPaths::ProjectDir();
-
-	// 构建目标文件路径：<项目根>/out.json
-	FString FilePath = ProjectRoot / TEXT("out.json");
-
 	// 将 FString 写入文件
 	bool bSuccess = FFileHelper::SaveStringToFile(
 		Output,

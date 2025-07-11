@@ -9,5 +9,5 @@ private:
 public:
 	DefExportImplement();
 	void FetchDefinitions();
-	bool WriteToFile();
+	bool WriteToFile(FString const &Path);
 };

@@ -1,0 +1,4 @@
+Intermediate
+Binaries/*
+!Binaries/ThirdParty
+blueprint_definitions.json
