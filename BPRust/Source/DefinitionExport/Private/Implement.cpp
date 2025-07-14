@@ -152,14 +152,17 @@ FString WriteFunctions(UClass* Class)
     	}
         FString Name = Func->GetAuthoredName();
 
+    	bool IsRustOverride = Func->GetMetaData(TEXT("Category")).StartsWith(TEXT("RustOverride"));
+    	const TCHAR* ExtraOverrideJson = IsRustOverride ? TEXT("\"override\": true,\n") : TEXT("");
+
     	AppendComma(OutJson,FunctionListAppendComma);
     	const TCHAR* Format = TEXT(
 		R"({
-"name": "{0}",
-"params": {1}
+"name": "{0}",{1}
+"params": {2}
 })"
 		);
-    	OutJson += FString::Format(Format, {Name, Params});
+    	OutJson += FString::Format(Format, {Name, ExtraOverrideJson, Params});
     }
 
 	OutJson += TEXT("]");
