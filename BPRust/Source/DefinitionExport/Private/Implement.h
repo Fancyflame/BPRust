@@ -1,13 +1,13 @@
 #pragma once
 
-class DefExportImplement
+class Implement
 {
 private:
 	FString Output;
 	// void WriteProperty(FProperty* const Property);
 	// void WriteStruct(UScriptStruct* const Struct);
 public:
-	DefExportImplement();
+	Implement();
 	void FetchDefinitions();
 	bool WriteToFile(FString const &Path);
 };

@@ -2,7 +2,7 @@
 
 #include "DefinitionExport.h"
 
-#include "DefExportImplement.h"
+#include "Implement.h"
 #include "DefinitionExportStyle.h"
 #include "DefinitionExportCommands.h"
 #include "Misc/MessageDialog.h"
@@ -55,7 +55,7 @@ void FDefinitionExportModule::PluginButtonClicked()
 	// 定义文件输出
 	FString FilePath = PluginRoot / TEXT("blueprint_definitions.json");
 	
-	DefExportImplement Exporter;
+	Implement Exporter;
 	Exporter.FetchDefinitions();
 	bool WriteSuccessful = Exporter.WriteToFile(FilePath);
 	

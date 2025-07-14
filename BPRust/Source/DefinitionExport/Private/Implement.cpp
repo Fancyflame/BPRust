@@ -1,8 +1,8 @@
-#include "DefExportImplement.h"
+#include "Implement.h"
 
 #include "Interfaces/IPluginManager.h"
 
-DefExportImplement::DefExportImplement()
+Implement::Implement()
 {
 }
 
@@ -27,7 +27,7 @@ const TCHAR* RecognizeParamType(EPropertyFlags Flags)
 
 #define WRITE_PRIM_PROP_TYPE(__PropertyType, __RelativeType) \
 	else if (Property->IsA<__PropertyType>()) { \
-		PropertyType = TEXT("primitive"); \
+		PropertyType = TEXT("Primitive"); \
 		RelativeType = TEXT(__RelativeType); \
 	} \
 
@@ -35,52 +35,43 @@ bool WritePropertyType(FProperty* Property, const TCHAR* & PropertyType, FString
 {
 	if (auto* ObjectProperty = CastField<FObjectProperty>(Property))
 	{
-		PropertyType = TEXT("object");
+		PropertyType = TEXT("Object");
 		RelativeType = ObjectProperty->PropertyClass->GetAuthoredName();
 	}
 	else if (auto* StructProperty = CastField<FStructProperty>(Property))
 	{
-		PropertyType = TEXT("struct");
+		PropertyType = TEXT("Struct");
 		RelativeType = StructProperty->Struct->GetAuthoredName();
 	}
 	else if (auto* EnumProperty = CastField<FEnumProperty>(Property))
 	{
 		// if this needs to modify , don't forget to modify byte property part
 		
-		PropertyType = TEXT("enum");
-		// `GetAuthoredName()` always returns "", use `GetName` instead.
+		PropertyType = TEXT("Enum");
+		// `GetAuthoredName()` always returns empty, use `GetName` instead.
 		RelativeType = EnumProperty->GetEnum()->GetName();
-	}
-	else if (Property->IsA<FNameProperty>())
-	{
-		PropertyType = TEXT("name");
-	}
-	else if (Property->IsA<FStrProperty>())
-	{
-		PropertyType = TEXT("string");
-	}
-	else if (Property->IsA<FTextProperty>())
-	{
-		PropertyType = TEXT("text");
 	}
 	else if (auto* Byte = CastField<FByteProperty>(Property))
 	{
 		if (Byte->IsEnum())
 		{
 			UEnum* Enum = Byte->Enum.Get();
-			PropertyType = TEXT("enum");
+			PropertyType = TEXT("Enum");
 			RelativeType = Enum->GetName();
 		} else
 		{
-			PropertyType = TEXT("primitive");
-			RelativeType = TEXT("byte");
+			PropertyType = TEXT("Primitive");
+			RelativeType = TEXT("Byte");
 		}
 	}
-	WRITE_PRIM_PROP_TYPE(FBoolProperty, "bool")
-	WRITE_PRIM_PROP_TYPE(FIntProperty, "int32")
-	WRITE_PRIM_PROP_TYPE(FInt64Property, "int64")
-	WRITE_PRIM_PROP_TYPE(FFloatProperty, "float")
-	WRITE_PRIM_PROP_TYPE(FDoubleProperty, "double")
+	WRITE_PRIM_PROP_TYPE(FNameProperty, "Name")
+	WRITE_PRIM_PROP_TYPE(FStrProperty, "Str")
+	WRITE_PRIM_PROP_TYPE(FTextProperty, "Text")
+	WRITE_PRIM_PROP_TYPE(FBoolProperty, "Bool")
+	WRITE_PRIM_PROP_TYPE(FIntProperty, "Int")
+	WRITE_PRIM_PROP_TYPE(FInt64Property, "Int64")
+	WRITE_PRIM_PROP_TYPE(FFloatProperty, "Float")
+	WRITE_PRIM_PROP_TYPE(FDoubleProperty, "Double")
 	else
 	{
 		// other types are not supported yet
@@ -244,10 +235,40 @@ FString WriteEnum(UEnum* const Enum)
 	return FString::Format(Format, {Name,VariantsStr});
 }
 
-void DefExportImplement::FetchDefinitions()
+// -------- START Basic -------------------------------
+
+template<typename T>
+void WriteSingleBasicType(FString &Out, const TCHAR* Name, bool &ShouldAppendComma)
+{
+	AppendComma(Out, ShouldAppendComma);
+	Out.Appendf(TEXT(
+R"("%s": {
+"size": %d,
+"align": %d
+})"
+	), Name, sizeof(T), alignof(T));
+}
+
+#define WRITE_SINGLE_BASIC_TYPE(__TypeDef, __TypeName) \
+	WriteSingleBasicType<__TypeDef>(Out, TEXT(__TypeName), ShouldAppendComma)
+void WriteBasicTypes(FString &Out)
+{
+	bool ShouldAppendComma = false;
+	WRITE_SINGLE_BASIC_TYPE(FName, "FName");
+	WRITE_SINGLE_BASIC_TYPE(FString, "FString");
+	WRITE_SINGLE_BASIC_TYPE(FText, "FText");
+	WRITE_SINGLE_BASIC_TYPE(FScriptArray, "FScriptArray");
+	WRITE_SINGLE_BASIC_TYPE(FScriptSet, "FScriptSet");
+	WRITE_SINGLE_BASIC_TYPE(FScriptMap, "FScriptMap");
+	WRITE_SINGLE_BASIC_TYPE(FSoftObjectPtr, "FSoftObjectPtr");
+}
+
+// -------- END Basic ----------------------------------
+
+void Implement::FetchDefinitions()
 {
 	Output = FString(TEXT("{"));
-
+	
 	// Class
 	Output += TEXT("\"classes\": [");
 	bool ClassComma = false;
@@ -280,14 +301,18 @@ void DefExportImplement::FetchDefinitions()
 		AppendComma(Output, EnumComma);
 		Output += WriteEnum(*It);
 	}
-	Output+=TEXT("]");
+	Output+=TEXT("],");
+
+	// Basic Struct
+	Output += TEXT("\"basic_types\": {");
+	WriteBasicTypes(Output);
+	Output += TEXT("}");
 
 	Output += TEXT("}");
-	// SortedClasses.Sort([&](const UObject &ClassA, const UObject &ClassB) -> bool
-	//                    { return ClassA.GetName() < ClassB.GetName(); });
+	
 }
 
-bool DefExportImplement::WriteToFile(FString const &FilePath)
+bool Implement::WriteToFile(FString const &FilePath)
 {
 	// 将 FString 写入文件
 	bool bSuccess = FFileHelper::SaveStringToFile(
