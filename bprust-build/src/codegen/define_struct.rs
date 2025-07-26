@@ -33,7 +33,7 @@ fn insert_struct_symbol<'a>(
 ) -> Result<bool> {
     let mut contains_lifetime = false;
     for member in &struct_def.members {
-        contains_lifetime = match &member.property {
+        contains_lifetime = match &member.prop_type {
             PropertyType::Enum(_) | PropertyType::Primitive(_) => false,
             PropertyType::Object(_) => true,
             &PropertyType::Struct(prop_struct_name) => {
@@ -57,6 +57,9 @@ fn insert_struct_symbol<'a>(
     }
 
     *struct_table.get_mut(struct_def.name).unwrap() = StructState::Resolved { contains_lifetime };
-    symbols.resolve_name(struct_def.name).def = ContentDefinition::Struct { contains_lifetime };
+    symbols.resolve_insert(
+        struct_def.name,
+        ContentDefinition::Struct { contains_lifetime },
+    );
     Ok(contains_lifetime)
 }

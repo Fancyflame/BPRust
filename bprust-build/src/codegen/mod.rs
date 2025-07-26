@@ -20,7 +20,6 @@ enum ContentDefinition {
     Class,
     Struct { contains_lifetime: bool },
     Enum,
-    Undefined,
 }
 
 pub(crate) struct Codegen<'a> {
@@ -41,10 +40,12 @@ impl<'a> Codegen<'a> {
 
     pub fn define_symbols(&mut self, definitions: BPDefinitions<'a>) -> Result<()> {
         for class in &definitions.classes {
-            self.symbols.resolve_name(class.name).def = ContentDefinition::Class;
+            self.symbols
+                .resolve_insert(class.name, ContentDefinition::Class);
         }
         for enum_def in &definitions.enums {
-            self.symbols.resolve_name(enum_def.name).def = ContentDefinition::Enum;
+            self.symbols
+                .resolve_insert(enum_def.name, ContentDefinition::Enum);
         }
         define_struct::define_struct_symbols(&mut self.symbols, &definitions.structs)?;
         Ok(())
@@ -62,26 +63,20 @@ struct LinkedContent {
 }
 
 impl<'a> SymbolMap<'a> {
-    fn resolve_name<'b>(&'b mut self, name: &'a str) -> &'b mut LinkedContent {
-        match self.symbols.entry(name) {
-            Entry::Occupied(occ) => occ.into_mut(),
-            Entry::Vacant(vac) => vac.insert(LinkedContent {
+    fn resolve_insert<'r>(&'r mut self, name: &'a str, insert: ContentDefinition) {
+        let occupied = self.symbols.insert(
+            name,
+            LinkedContent {
                 safe_name: self.safe_name.to_safe_name(name),
-                def: ContentDefinition::Undefined,
-            }),
-        }
+                def: insert,
+            },
+        );
+        assert!(occupied.is_none(), "this symbol is already defined");
     }
 
-    fn lookup_name(&self, name: &str) -> Result<&LinkedContent> {
+    fn lookup_name<'r>(&'r self, name: &str) -> Result<&'r LinkedContent> {
         self.symbols
             .get(name)
             .ok_or_else(|| anyhow!("symbol `{name}` is not found"))
-    }
-
-    fn resolve_names<'b, const N: usize>(&'b mut self, names: [&'a str; N]) -> [&'b Ident; N] {
-        for name in names {
-            self.resolve_name(name);
-        }
-        names.map(|name| &self.symbols[name].safe_name)
     }
 }

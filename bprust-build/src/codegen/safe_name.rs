@@ -18,7 +18,7 @@ impl SafeNameCast {
         self.register_name()
     }
 
-    pub fn clear_registered(&mut self) {
+    pub fn clear(&mut self) {
         self.registered_safe_name.clear();
     }
 

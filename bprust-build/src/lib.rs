@@ -57,7 +57,7 @@ struct DefFunction<'a> {
 struct DefProperty<'a> {
     name: &'a str,
     #[serde(flatten)]
-    property: PropertyType<'a>,
+    prop_type: PropertyType<'a>,
     flags: i64,
 }
 
