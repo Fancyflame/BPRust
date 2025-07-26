@@ -1,5 +1,5 @@
 #[repr(C)]
-pub(super) struct Handler {
+pub struct Handler {
     context: *mut (),
     fframe: *mut (),
     z_param_result: *mut (),

@@ -1,8 +1,12 @@
-mod property_flag;
-
 use std::collections::HashMap;
 
 use serde::Deserialize;
+
+#[path = "property_flag.rs"]
+#[allow(non_snake_case)]
+mod EPropertyFlag;
+
+pub mod codegen;
 
 #[derive(Deserialize)]
 pub struct BPDefinitions<'a> {
@@ -36,13 +40,13 @@ struct DefBasic {
 
 #[derive(Deserialize)]
 struct DefEnum<'a> {
-    name: String,
-    #[serde(borrow)]
+    name: &'a str,
     variants: HashMap<&'a str, i64>,
 }
 
 #[derive(Deserialize)]
 struct DefFunction<'a> {
+    id: &'a str,
     name: &'a str,
     #[serde(rename = "override", default)]
     rust_override: bool,

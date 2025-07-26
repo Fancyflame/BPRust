@@ -1,4 +1,4 @@
-use std::cell::UnsafeCell;
+use std::{cell::UnsafeCell, ffi::c_char};
 
 pub mod custom_thunk;
 
@@ -10,12 +10,13 @@ unsafe impl Sync for InitCell {}
 
 #[repr(C)]
 pub struct CppFunctionTable {
-    handle_custom_thunk: extern "C" fn(
-        handler: &custom_thunk::Handler,
+    pub handle_custom_thunk: extern "C" fn(
+        handler: &mut custom_thunk::Handler,
         user_data: *mut (),
-        resolve_param: extern "C" fn(user_data: *mut (), handler: &custom_thunk::Handler),
+        resolve_param: extern "C" fn(user_data: *mut (), handler: &mut custom_thunk::Handler),
         call_function: extern "C" fn(user_data: *mut (), u_object: *mut ()),
     ),
+    pub process_event: extern "C" fn(u_object: *mut (), fn_name: &c_char, params: *mut ()),
 }
 
 #[allow(non_snake_case)]
