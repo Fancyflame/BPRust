@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Not};
 
 use anyhow::{Result, anyhow};
 
@@ -12,10 +12,12 @@ pub(super) fn define_struct_symbols<'a>(
     structs: &Vec<DefStruct<'a>>,
 ) -> Result<()> {
     let mut struct_table =
-        HashMap::from_iter(structs.iter().map(|s| (s.name, StructState::Unresolved(s))));
+        HashMap::from_iter(structs.iter().map(|s| (s.id, StructState::Unresolved(s))));
 
     for struct_def in structs {
-        insert_struct_symbol(struct_def, &mut struct_table, symbols)?;
+        if let StructState::Unresolved(_) = &struct_table[struct_def.id] {
+            insert_struct_symbol(struct_def, &mut struct_table, symbols)?;
+        }
     }
 
     Ok(())
@@ -36,28 +38,25 @@ fn insert_struct_symbol<'a>(
         contains_lifetime = match &member.prop_type {
             PropertyType::Enum(_) | PropertyType::Primitive(_) => false,
             PropertyType::Object(_) => true,
-            &PropertyType::Struct(prop_struct_name) => {
-                let struct_state = struct_table
-                    .get_mut(prop_struct_name)
-                    .ok_or_else(|| anyhow!("struct `{prop_struct_name}` is not defined"))?;
-
-                match struct_state {
-                    StructState::Resolved {
-                        contains_lifetime: need_lifetime,
-                    } => *need_lifetime,
-                    &mut StructState::Unresolved(def) => {
+            &PropertyType::Struct(prop_struct_name) => match struct_table.get(prop_struct_name) {
+                Some(struct_state) => match struct_state {
+                    StructState::Resolved { contains_lifetime } => *contains_lifetime,
+                    StructState::Unresolved(def) => {
                         insert_struct_symbol(def, struct_table, symbols)?
                     }
-                }
-            }
+                },
+                // struct not found. but it's not the time to throw error
+                None => false,
+            },
         };
         if contains_lifetime {
             break;
         }
     }
 
-    *struct_table.get_mut(struct_def.name).unwrap() = StructState::Resolved { contains_lifetime };
+    *struct_table.get_mut(struct_def.id).unwrap() = StructState::Resolved { contains_lifetime };
     symbols.resolve_insert(
+        struct_def.id,
         struct_def.name,
         ContentDefinition::Struct { contains_lifetime },
     );

@@ -151,18 +151,21 @@ FString WriteFunctions(UClass* Class)
     		continue;
     	}
         FString Name = Func->GetAuthoredName();
-
-    	bool IsRustOverride = Func->GetMetaData(TEXT("Category")).StartsWith(TEXT("RustOverride"));
+    	FString Id = Func->GetName();
+    	
+		const FString& Category = Func->GetMetaData(TEXT("Category"));
+    	bool IsRustOverride = Category == TEXT("RustOverride") || Category.StartsWith(TEXT("RustOverride|"));
     	const TCHAR* ExtraOverrideJson = IsRustOverride ? TEXT("\"override\": true,\n") : TEXT("");
 
     	AppendComma(OutJson,FunctionListAppendComma);
     	const TCHAR* Format = TEXT(
 		R"({
-"name": "{0}",{1}
-"params": {2}
+"name": "{0}",
+"id": "{1}",{2}
+"params": {3}
 })"
 		);
-    	OutJson += FString::Format(Format, {Name, ExtraOverrideJson, Params});
+    	OutJson += FString::Format(Format, {Name, Id, ExtraOverrideJson, Params});
     }
 
 	OutJson += TEXT("]");
@@ -172,6 +175,8 @@ FString WriteFunctions(UClass* Class)
 FString WriteClass(UClass* const Class)
 {
 	FString ClassName = Class->GetAuthoredName();
+    FString Id = Class->GetName();
+
 	FString SuperClassName;
 	UClass *SuperClass = Class->GetSuperClass(); 
 	if (IsValid(SuperClass))
@@ -187,18 +192,20 @@ FString WriteClass(UClass* const Class)
 	const TCHAR* Format = TEXT(
 		R"({
 "name": "{0}",
-"super": "{1}",
-"properties": {2},
-"functions": {3}
+"id": "{1}",
+"super": "{2}",
+"properties": {3},
+"functions": {4}
 })"
 	);
-	return FString::Format(Format, {ClassName, SuperClassName, Properties, Functions});
+	return FString::Format(Format, {ClassName, Id, SuperClassName, Properties, Functions});
 }
 
 bool WriteStruct(UScriptStruct* const Struct, FString &OutStr)
 {
 	// UClass* Type = Struct->StaticClass();
 	FString StructName = Struct->GetAuthoredName();
+	FString Id = Struct->GetName();
 
 	FString MembersStr;
 	if (!WritePropertiesArray(TFieldIterator<FProperty>(Struct), MembersStr))
@@ -209,9 +216,10 @@ bool WriteStruct(UScriptStruct* const Struct, FString &OutStr)
 	const TCHAR* Format = TEXT(
 		R"JSON({
 "name": "{0}",
-"members": {1}
+"id": "{1}",
+"members": {2}
 })JSON");
-	OutStr = FString::Format(Format, {StructName, MembersStr});
+	OutStr = FString::Format(Format, {StructName, Id, MembersStr});
 	return true;
 }
 
@@ -231,7 +239,7 @@ FString WriteEnum(UEnum* const Enum)
 
 	const TCHAR* Format = TEXT(
 		R"({
-"name": "{0}",
+"id": "{0}",
 "variants": {{1}}
 })"
 	);

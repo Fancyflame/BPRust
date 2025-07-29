@@ -20,6 +20,7 @@ pub struct BPDefinitions<'a> {
 #[derive(Deserialize)]
 struct DefClass<'a> {
     name: &'a str,
+    id: &'a str,
     #[serde(rename = "super")]
     super_class: String,
     properties: Vec<DefProperty<'a>>,
@@ -29,6 +30,7 @@ struct DefClass<'a> {
 #[derive(Deserialize)]
 struct DefStruct<'a> {
     name: &'a str,
+    id: &'a str,
     members: Vec<DefProperty<'a>>,
 }
 
@@ -40,7 +42,7 @@ struct DefBasic {
 
 #[derive(Deserialize)]
 struct DefEnum<'a> {
-    name: &'a str,
+    id: &'a str,
     variants: HashMap<&'a str, i64>,
 }
 
