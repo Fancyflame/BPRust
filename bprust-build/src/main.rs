@@ -5,7 +5,6 @@ use std::{
 };
 
 use anyhow::Result;
-use bprust_build::{BPDefinitions, codegen::generate_rust_code};
 
 fn main() -> Result<()> {
     const JSON_PATH: &str = "../BPRust/blueprint_definitions.json";
@@ -14,9 +13,8 @@ fn main() -> Result<()> {
     println!("{:?}", json_path);
     let string = read_to_string(&json_path)?;
     println!("read done");
-    let json: BPDefinitions = serde_json::from_str(&string)?;
-    let string = generate_rust_code(json, true)?;
-    fs::write("out.rs", string)?;
+    let code = bprust_build::compile(&string, true)?;
+    fs::write("out.rs", code)?;
 
     println!("done");
     Ok(())

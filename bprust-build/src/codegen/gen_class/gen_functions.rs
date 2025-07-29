@@ -3,6 +3,7 @@ use crate::{
     codegen::{SymbolMap, resolve_property::ResolvedTypeOfProperty},
 };
 use anyhow::Result;
+use case::CaseExt;
 use quote::format_ident;
 use syn::Ident;
 
@@ -79,7 +80,7 @@ impl<'r> FunctionsCodeGen<'r> {
 
     fn define_param(&mut self, index: usize, param: &DefProperty) -> Result<()> {
         let is_output = param.flags & (EPropertyFlag::OutParm | EPropertyFlag::ReturnParm) != 0;
-        let param_name = self.safe_param_names.to_safe_name(param.name);
+        let param_name = self.safe_param_names.to_safe_name(&param.name.to_snake());
         let param_type = self.symbols.get_type_of_property(&param.prop_type)?;
 
         if is_output {

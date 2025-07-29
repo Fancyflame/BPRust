@@ -92,7 +92,7 @@ impl<'a> SymbolMap<'a> {
         );
 
         if occupied.is_some() {
-            println!("symbol `{name}` is already defined");
+            println!("cargo:warning=symbol `{name}` is already defined");
         }
         // assert!(occupied.is_none(), "symbol `{name}` is already defined");
     }

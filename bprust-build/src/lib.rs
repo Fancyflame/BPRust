@@ -1,86 +1,57 @@
-use std::collections::HashMap;
+use std::{
+    env,
+    fs::{create_dir_all, read_to_string},
+    io::Write,
+    path::{Path, PathBuf},
+};
 
-use serde::Deserialize;
+use anyhow::Result;
+use json_definitions::*;
+
+use crate::codegen::generate_rust_code;
 
 #[path = "property_flag.rs"]
 #[allow(non_snake_case)]
 mod EPropertyFlag;
+mod codegen;
+mod json_definitions;
 
-pub mod codegen;
-
-#[derive(Deserialize)]
-pub struct BPDefinitions<'a> {
-    #[serde(borrow)]
-    classes: Vec<DefClass<'a>>,
-    structs: Vec<DefStruct<'a>>,
-    enums: Vec<DefEnum<'a>>,
-    basic_types: HashMap<&'a str, DefBasic>,
+pub fn compile(json: &str, code_prettify: bool) -> Result<String> {
+    let def: BPDefinitions = serde_json::from_str(json)?;
+    generate_rust_code(def, code_prettify)
 }
 
-#[derive(Deserialize)]
-struct DefClass<'a> {
-    name: &'a str,
-    id: &'a str,
-    #[serde(rename = "super")]
-    super_class: String,
-    properties: Vec<DefProperty<'a>>,
-    functions: Vec<DefFunction<'a>>,
-}
+pub fn build(json_path: impl AsRef<Path>, file_path: Option<&Path>) {
+    let file = match read_to_string(json_path.as_ref()) {
+        Ok(file) => file,
+        Err(err) => {
+            panic!("cannot read file `{}`: {err}", json_path.as_ref().display());
+        }
+    };
 
-#[derive(Deserialize)]
-struct DefStruct<'a> {
-    name: &'a str,
-    id: &'a str,
-    members: Vec<DefProperty<'a>>,
-}
+    let code = compile(&file, true).expect("compile error");
 
-#[derive(Deserialize)]
-struct DefBasic {
-    size: u64,
-    align: u64,
-}
+    let mut out_file = PathBuf::new();
+    if let Ok(dir) = env::var("OUT_DIR") {
+        out_file.push(dir);
+    }
+    out_file.push("bprust-build-result");
+    if let Some(file_path) = file_path {
+        out_file.push(file_path);
+    } else {
+        out_file.push("generated.rs");
+    }
 
-#[derive(Deserialize)]
-struct DefEnum<'a> {
-    id: &'a str,
-    variants: HashMap<&'a str, i64>,
-}
+    if let Some(parent_dir) = out_file.parent() {
+        if let Err(err) = create_dir_all(parent_dir) {
+            panic!("cannot create directory `{}`: {err}", parent_dir.display())
+        }
+    }
 
-#[derive(Deserialize)]
-struct DefFunction<'a> {
-    id: &'a str,
-    name: &'a str,
-    #[serde(rename = "override", default)]
-    rust_override: bool,
-    params: Vec<DefProperty<'a>>,
-}
+    if let Err(err) = std::fs::write(&out_file, code)
+    {
+        panic!("cannot write code to file `{}`: {err}", out_file.display());
+    }
 
-#[derive(Deserialize)]
-struct DefProperty<'a> {
-    name: &'a str,
-    #[serde(flatten)]
-    prop_type: PropertyType<'a>,
-    flags: i64,
-}
-
-#[derive(Clone, Deserialize)]
-#[serde(tag = "property", content = "type_info")]
-enum PropertyType<'a> {
-    Primitive(PropPrimitiveType),
-    Object(&'a str),
-    Struct(&'a str),
-    Enum(&'a str),
-}
-
-#[derive(Clone, Copy, Deserialize)]
-enum PropPrimitiveType {
-    Name,
-    Str,
-    Text,
-    Bool,
-    Byte,
-    Int,
-    Int64,
-    Float,
-    Double,
+    println!("cargo:rerun-if-changed={}", json_path.as_ref().display());
 }
