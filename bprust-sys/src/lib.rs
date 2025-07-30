@@ -10,7 +10,7 @@ macro_rules! import_bp {
         $crate::import_bp!("generated.rs");
     };
     ($($path:tt)*) => {
-        include!(concat!(env!("OUT_DIR"), "/bprust-build-result/", $($path)*))
+        include!(concat!(env!("OUT_DIR"), "/bprust-build-result/", $($path)*));
     }
 }
 

@@ -2,13 +2,14 @@ use std::collections::{HashMap, hash_map::Entry};
 
 use anyhow::{Result, anyhow};
 use proc_macro2::{Ident, TokenStream};
-use quote::quote;
+use quote::{ToTokens, TokenStreamExt, quote};
 
 use self::lifetime_const::*;
 use crate::{BPDefinitions, DefStruct, PropertyType, codegen::safe_name::SafeNameCast};
 
 mod define_struct;
 mod gen_class;
+mod gen_struct;
 mod lifetime_const;
 mod resolve_property;
 mod safe_name;
@@ -66,7 +67,7 @@ impl<'a> Codegen<'a> {
         };
 
         for class in &definitions.classes {
-            self.gen_class(&mut tokens, class)?;
+            self.gen_class(class)?.to_tokens(&mut tokens);
         }
 
         Ok(tokens)

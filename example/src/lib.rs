@@ -1,3 +1,5 @@
 mod bp {
-    bprust_sys::import_bp! {}
+    #![allow(nonstandard_style)]
+
+    // bprust_sys::import_bp! {}
 }

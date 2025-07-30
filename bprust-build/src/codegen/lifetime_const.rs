@@ -10,14 +10,17 @@ pub(super) enum LifetimeConst {
     Anonymous,
     Input,
     Output,
+    DefStruct,
 }
 
 impl ToTokens for LifetimeConst {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
-            Self::Anonymous => quote! {'_}.to_tokens(tokens),
-            Self::Input => quote! {'input}.to_tokens(tokens),
-            Self::Output => quote! {'output}.to_tokens(tokens),
+            Self::Anonymous => quote! {'_},
+            Self::Input => quote! {'input},
+            Self::Output => quote! {'output},
+            Self::DefStruct => quote! {'obj},
         }
+        .to_tokens(tokens)
     }
 }

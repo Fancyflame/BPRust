@@ -19,7 +19,7 @@ use crate::{
 mod gen_functions;
 
 impl<'a> Codegen<'a> {
-    pub fn gen_class(&mut self, tokens: &mut TokenStream, class: &DefClass<'a>) -> Result<()> {
+    pub fn gen_class(&self, class: &DefClass<'a>) -> Result<TokenStream> {
         let class_name = &self.symbols.lookup_name(class.id).unwrap().safe_name;
         let functions = FunctionsCodeGen::new(&self.symbols).generate_functions(&class)?;
 
@@ -30,8 +30,7 @@ impl<'a> Codegen<'a> {
             functions,
         };
 
-        codegen.to_tokens().to_tokens(tokens);
-        Ok(())
+        Ok(codegen.to_tokens())
     }
 }
 
