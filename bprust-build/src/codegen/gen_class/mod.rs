@@ -142,7 +142,7 @@ fn generate_function(func: &FunctionInst, ret_mod: &Ident) -> TokenStream {
     let return_expr = match &func.return_type {
         ReturnType::None => quote! {},
         ReturnType::Single(ident, _) => quote! {
-            #ident
+            params.#ident.assume_init()
         },
         ReturnType::Multiple(ReturnStruct { struct_name, .. }) => quote! {
             #ret_mod::#struct_name {
@@ -163,13 +163,14 @@ fn generate_function(func: &FunctionInst, ret_mod: &Ident) -> TokenStream {
             }
 
             let mut params = __BPRustFunctionParameters {
+                _capture_lifetime: ::core::marker::PhantomData,
                 #(#input_param_names: ::core::mem::MaybeUninit::new(#input_param_names),)*
                 #(#output_param_names: ::core::mem::MaybeUninit::uninit(),)*
             };
 
             unsafe {
-                bprust_sys::cpp_import::cpp_get().process_event(
-                    self as *const Self as _,
+                bprust_sys::cpp_import::process_event(
+                    self,
                     #ufunc_name,
                     &mut params,
                 );
@@ -195,7 +196,7 @@ fn generate_function_return_struct(func: &FunctionInst) -> Option<TokenStream> {
         let name = &func.name;
         let ty = func.ty.type_tokens(LifetimeConst::Output);
         Some(quote! {
-            #name: #ty,
+            pub #name: #ty,
         })
     });
 

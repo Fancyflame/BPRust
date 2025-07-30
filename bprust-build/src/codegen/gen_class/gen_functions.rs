@@ -108,7 +108,7 @@ impl<'r> FunctionsCodeGen<'r> {
                 ReturnType::Single(p.name.clone(), p.ty)
             }
             OutParamCount::Many => ReturnType::Multiple(ReturnStruct {
-                struct_name: format_ident!("ReturnTypeOf{fn_name}"),
+                struct_name: format_ident!("BPRustReturnTypeOf{fn_name}"),
                 contains_lifetime: self.out_param_contains_lifetime,
             }),
         }

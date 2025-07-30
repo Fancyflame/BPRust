@@ -61,7 +61,9 @@ impl<'a> Codegen<'a> {
     }
 
     fn generate_code(&mut self, definitions: &BPDefinitions<'a>) -> Result<TokenStream> {
-        let mut tokens = TokenStream::new();
+        let mut tokens = quote! {
+            #![allow(nonstandard_style)]
+        };
 
         for class in &definitions.classes {
             self.gen_class(&mut tokens, class)?;

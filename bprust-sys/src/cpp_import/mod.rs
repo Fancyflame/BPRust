@@ -1,4 +1,7 @@
-use std::{cell::UnsafeCell, ffi::c_char};
+use std::{
+    cell::UnsafeCell,
+    ffi::{CStr, c_char},
+};
 
 pub mod custom_thunk;
 
@@ -16,7 +19,8 @@ pub struct CppFunctionTable {
         resolve_param: extern "C" fn(user_data: *mut (), handler: &mut custom_thunk::Handler),
         call_function: extern "C" fn(user_data: *mut (), u_object: *mut ()),
     ),
-    pub process_event: unsafe extern "C" fn(u_object: *mut (), fn_name: &c_char, params: *mut ()),
+    pub process_event:
+        unsafe extern "C" fn(u_object: *mut (), fn_name: *const c_char, params: *mut ()),
 }
 
 #[allow(non_snake_case)]
@@ -43,5 +47,19 @@ pub fn cpp_get() -> &'static CppFunctionTable {
                 panic!("BPRust ERROR: should NOT use any functions before calling `BPRustSys_init`")
             }
         }
+    }
+}
+
+pub unsafe fn process_event<UObject, Param>(
+    u_object: &UObject,
+    fn_name: &'static CStr,
+    params: &mut Param,
+) {
+    unsafe {
+        (cpp_get().process_event)(
+            u_object as *const _ as _,
+            fn_name.as_ptr(),
+            params as *mut _ as _,
+        )
     }
 }

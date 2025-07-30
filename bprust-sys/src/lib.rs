@@ -1,4 +1,4 @@
-mod cpp_import;
+pub mod cpp_import;
 
 fn main() {
     println!("Hello, world!");
